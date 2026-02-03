@@ -1,0 +1,53 @@
+import pandas as pd 
+import numpy as np 
+
+
+df_raw = pd.read_csv("day06_user_data.csv") 
+
+custom_missing = ["N/A", "NA", "not reported", "unknown", "?"] 
+
+df = df_raw.replace(custom_missing, np.nan) 
+
+def missing_summary(df: pd.DataFrame) -> pd.DataFrame:
+   total = df.isna().sum() 
+   pct = (df.isna().mean() * 100).round(1) 
+   return pd.DataFrame({ "missing_count": total, "missing_percent": pct }).sort_values("missing_percent", ascending=False) 
+   
+   summary = missing_summary(df) 
+   
+   df["missing_per_row"] = df.isna().sum(axis=1) 
+   
+   critical_cols = ["age", "income"] 
+   
+   df_A = df.dropna(subset=critical_cols) 
+   
+   df_B = df.copy() 
+   
+   df_B["income_num"] = pd.to_numeric(df_B["income"], errors="coerce") 
+   
+   df_B["age_missing"] = df_B["age"].isna().astype(int) 
+   
+   df_B["income_missing"] = df_B["income_num"].isna().astype(int) 
+   
+   age_median = df_B["age"].median() 
+   
+   income_median = df_B["income_num"].median() 
+   
+   df_B["age_imp"] = df_B["age"].fillna(age_median) 
+   
+   df_B["income_imp"] = df_B["income_num"].fillna(income_median) 
+   
+   comparison = pd.DataFrame({ 
+       "Version_A_rows":[len(df_A)], 
+       "Version_B_rows": [len(df_B)], 
+       "A_age_mean": [df_A["age"].mean()], 
+       "B_age_mean": [df_B["age_imp"].mean()],
+       "A_income_mean": [df_A["income"].astype(float).mean()], 
+       "B_income_mean": [df_B["income_imp"].mean()] }) 
+   
+   
+   
+   print(summary) 
+   print(df_A.shape) 
+   print(df_B.shape) 
+   print(comparison)
