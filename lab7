@@ -1,0 +1,44 @@
+import pandas as pd
+ import numpy as np
+df_raw = pd.read_csv("day07_test.csv") 
+custom_missing = ["N/A", "NA", "not reported", "unknown", "?"] 
+df_raw = df_raw.replace(custom_missing, np.nan) 
+if "split" in df_raw.columns:
+   train_df = df_raw[df_raw["split"] == "train"].copy() 
+   test_df = df_raw[df_raw["split"] == "test"].copy() 
+else:
+   cut = int(len(df_raw) * 0.7) 
+   train_df = df_raw.iloc[:cut].copy() 
+   test_df = df_raw.iloc[cut:].copy() 
+num_cols = train_df.select_dtypes(include=["number"]).columns.tolist() 
+cat_cols = train_df.select_dtypes(exclude=["number"]).columns.tolist() 
+if "churned" in num_cols: 
+  num_cols.remove("churned") 
+if "churned" in cat_cols:
+   cat_cols.remove("churned") 
+   
+def fit_imputer(train, num_cols, cat_cols):
+   return { "num_median": {c: train[c].median() for c in num_cols}, "cat_mode": {c: train[c].mode(dropna=True)[0] for c in cat_cols} } 
+
+params = fit_imputer(train_df, num_cols, cat_cols) 
+
+def transform_imputer(df, params, add_indicators=True):
+   out = df.copy() 
+   for c, med in params["num_median"].items(): 
+    if add_indicators: out[c + "_missing"] = out[c].isna().astype(int) 
+    out[c] = out[c].fillna(med) 
+    for c, mode_val in params["cat_mode"].items(): 
+      if add_indicators: out[c + "_missing"] = out[c].isna().astype(int) 
+      out[c] = out[c].fillna(mode_val) 
+      return out 
+
+train_no_ind = transform_imputer(train_df, params, add_indicators=False) 
+test_no_ind = transform_imputer(test_df, params, add_indicators=False) 
+train_with_ind = transform_imputer(train_df, params, add_indicators=True) 
+test_with_ind = transform_imputer(test_df, params, add_indicators=True) 
+
+print(params) 
+print( train_no_ind.isna().sum()) 
+print( train_with_ind.isna().sum()) 
+print(train_with_ind.head()) 
+print(test_with_ind.head())
