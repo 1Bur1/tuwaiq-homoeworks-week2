@@ -1,0 +1,55 @@
+
+#Day 9 Activity: Data Types Practice
+#Tasks:
+#1) Identify numeric-like, currency-like, datetime-like columns
+#2) Convert to proper dtypes
+#3) Validate conversions by checking NaN counts
+
+
+import pandas as pd
+import numpy as np
+
+
+raw = {
+    "age": ["25", "30", "unknown"],
+    "income": ["$50,000", "$60,000", None],
+    "signup": ["2024-01-01", "01/05/2024", "not a date"],
+}
+
+df = pd.DataFrame(raw)
+df["age"] = pd.to_numeric(df["age"], errors="coerce")
+print(df)
+
+print("\nMissing ages:", df["age"].isna().sum())  # 2 became NaN
+
+
+
+
+
+
+def clean_currency(s: pd.Series) -> pd.Series:
+
+    cleaned = s.str.replace(r"[^0-9.\-]", "", regex=True)  # Keep digits, dot, minus
+
+    return pd.to_numeric(cleaned, errors="coerce")
+
+ 
+
+df["income_num"] = clean_currency(df["income"])
+
+
+
+df_mixed = pd.DataFrame({"score": [10, "12", "N/A", 15, "unknown", 20]})
+
+ 
+
+df_mixed["score"] = df_mixed["score"].replace(["N/A", "unknown"], np.nan)
+df_mixed["score"] = pd.to_numeric(df_mixed["score"], errors="coerce")
+
+print(df_mixed)
+
+
+
+
+
+# TODO: Implement normalize_schema(df) to convert types safel#
