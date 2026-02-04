@@ -1,0 +1,76 @@
+
+#Day 10 Activity: Outliers Practice
+#Tasks:
+#1) Implement IQR-based outlier detection
+#2) Implement z-score detection
+#3) Compare strategies: no handling, IQR capping, log1p transform
+
+import seaborn as sns
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+# Sample heavy-tailed data
+np.random.seed(10)
+values = np.concatenate([np.random.lognormal(10, 0.5, 1000), [1e7, 2e7]])
+
+df = pd.DataFrame({"income": values})
+
+
+
+def iqr_bounds(s, k=1.5):
+
+    q1, q3 = s.quantile(0.25), s.quantile(0.75)
+
+    iqr = q3 - q1
+
+    return q1 - k * iqr, q3 + k * iqr
+
+ 
+
+lower, upper = iqr_bounds(df["income"], k=1.5)
+
+mask_iqr = (df["income"] < lower) | (df["income"] > upper)
+
+print(mask_iqr)
+
+
+
+
+
+
+
+
+income = df["income"].astype(float)
+
+mean, std = income.mean(), income.std(ddof=0)
+
+ 
+
+df["income_z"] = (income - mean) / std
+
+mask_z = df["income_z"].abs() > 3
+
+print("Z-score outliers:\n", df[mask_z])
+
+
+
+
+
+
+
+
+
+df["iqr_outlier"] = mask_iqr.astype(int)
+df["z_outlier"] = mask_z.astype(int) 
+heatmap_df = df[["income", "income_z", "iqr_outlier", "z_outlier"]] 
+plt.figure(figsize=(8, 6)) 
+sns.heatmap( heatmap_df.corr(), annot=True, fmt=".2f", cmap="coolwarm" ) 
+plt.title("Outliers Detection Heatmap") 
+plt.show()
+
+
+# TODO: Implement iqr_bounds and detect_outliers_iqr
+# TODO: Implement detect_outliers_zscore
+# TODO: Apply capping and log1p transformation
